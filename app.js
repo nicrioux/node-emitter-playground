@@ -1,89 +1,85 @@
 var rl = require("readline");
 var events = require('events');
-var domain = require('domain');
 var stdin = process.stdin;
 var stdout = process.stdout;
-
-// filters the locations based on given user input, everything if
-// no match found
-function completer(line) {
-  var eventNames = [
-    'crash',
-    'custom',
-    'done',
-    'error'
-  ];
-
-  var hits = eventNames.filter(function(c) {
-    return c.indexOf(line) == 0
-  });
-
-  return [hits.length ? hits : eventNames, line]
-}
-
-function handleInput(appInstance){
-  var prompt = rl.createInterface(stdin,stdout,completer);
-  prompt.setPrompt('Enter event type (tab to list/autocomplete): ');
-  prompt.prompt();
-
-  // handle user input (after he presses enter)
-  prompt.on('line', function(line) {
-    switch(line.trim()) {
-      case 'done':
-          prompt.close();
-          break;
-      case 'custom':
-          appInstance.emit('custom', {
-            msg: 'custom event'
-          });
-          break;
-      case 'error':
-          appInstance.emit('error', {
-            name: "Error",
-            level: "recoverable",
-            cause: 'missing xyz',
-            when: new Date()
-          });
-          break;
-      case 'crash':
-        throw {
-          name: "Crash",
-          level: "fatal",
-          cause: 'manuallyTriggered',
-          when: new Date()
-        };
-      default:
-          console.log('(Sending positive vides to '+ line +')')
-          break;
-    }
-
-    // continue prompting
-    prompt.prompt();
-  });
-
-  // handle on prompt exit event
-  prompt.on('close', function() {
-    console.log('Have a great day!');
-    appInstance.emit('done');
-  });
-}
 
 // Define the App object
 var App = function(){
   var self = this;
 
-  // trap any error raised from this object
-  var d = domain.create();
-  d.on('error', function(error){
-    self.emit('error', error);
-  });
-  d.add( self );
-
   self.start = function() {
-    handleInput(self);
-  };
+    var prompt = createPrompt();
+    prompt.prompt(); // now waiting for user input
+
+    // process user input (after enter/return is pressed)
+    prompt.on('line', function(line) {
+      handleInput(self, prompt, line);
+    });
+  }
 };
 
 // make the App an event emitter
 App.prototype = Object.create(require('events').EventEmitter.prototype);
+
+// filters the event names based on given user input
+function completer(line) {
+  // available events
+  var eventNames = [
+    'crash',
+    'custom',
+    'exit',
+    'error'
+  ];
+
+  // filter by what has been entered so far
+  var hits = eventNames.filter(function(c) {
+    return c.indexOf(line) == 0
+  });
+
+  // return matching events or all if none matched
+  return [hits.length ? hits : eventNames, line]
+}
+
+function createPrompt(){
+  var prompt = rl.createInterface(stdin,stdout,completer);
+  prompt.setPrompt('>Enter event type (tab to list/autocomplete): ');
+  return prompt;
+}
+
+// handles user input
+function handleInput(appInstance, prompt, line){
+  switch(line.trim()) {
+    case 'exit':
+        prompt.close();
+        appInstance.emit('exit');
+    case 'custom':
+        appInstance.emit('custom', {
+          msg: 'custom event'
+        });
+        prompt.prompt();
+        break;
+    case 'error':
+        appInstance.emit('error', {
+          name: "Error",
+          level: "recoverable",
+          cause: 'missing xyz',
+          when: new Date()
+        });
+        prompt.prompt();
+        break;
+    case 'crash':
+      throw {
+        name: "Crash",
+        level: "fatal",
+        cause: 'manuallyTriggered',
+        when: new Date()
+      };
+      prompt.prompt();
+      break;
+    default:
+      console.log('Invalid operation. Press tab to see all operations.');
+      prompt.prompt();
+  }
+}
+
 module.exports = App;
