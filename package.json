@@ -10,10 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "es6-module-loader": "^0.16.6",
-    "node-inspector": "^0.10.1",
-    "node-weather": "^0.1.6",
-    "stackvis": "^0.2.0",
-    "traceur": "0.0.89"
+  
   }
 }
