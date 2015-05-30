@@ -14,27 +14,26 @@ if (cluster.isMaster) {
   });
 }else{ // worker
   var App = require("./App");
-  function onAppDone(){
-    console.log('>>> done event received');
-    process.exit(0);
-  }
-  function onAppEvent(msg){
-    console.log('>>> custom event received');
-    console.dir(msg);
-  }
-  function onAppError(error){
-    console.log('>>> error event received');
-    console.dir( error );
-  }
 
+  // handles any exception bubbling out of the app
   process.on('uncaughtException', function (err) {
     console.error('>>> uncaught exception', err);
     process.exit(1);
   });
 
   var app = new App();
-  app.on('done', onAppDone );
-  app.on('custom', onAppEvent );
-  app.on('error', onAppError );
+  app.on('done', function (){
+    console.log('>>> done event received');
+    process.exit(0);
+  });
+  app.on('custom', function (msg){
+    console.log('>>> custom event received');
+    console.dir(msg);
+  });
+  app.on('error',   function (error){
+      console.log('>>> error event received');
+      console.dir( error );
+  });
+
   app.start();
 }

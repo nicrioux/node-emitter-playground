@@ -23,8 +23,10 @@ function completer(line) {
 
 function handleInput(appInstance){
   var prompt = rl.createInterface(stdin,stdout,completer);
-  prompt.setPrompt('Enter event type (tab to autocomplete): ');
+  prompt.setPrompt('Enter event type (tab to list/autocomplete): ');
   prompt.prompt();
+
+  // handle user input (after he presses enter)
   prompt.on('line', function(line) {
     switch(line.trim()) {
       case 'done':
@@ -54,18 +56,23 @@ function handleInput(appInstance){
           console.log('(Sending positive vides to '+ line +')')
           break;
     }
+
+    // continue prompting
     prompt.prompt();
   });
 
+  // handle on prompt exit event
   prompt.on('close', function() {
     console.log('Have a great day!');
     appInstance.emit('done');
   });
 }
 
-
+// Define the App object
 var App = function(){
   var self = this;
+
+  // trap any error raised from this object
   var d = domain.create();
   d.on('error', function(error){
     self.emit('error', error);
@@ -76,5 +83,7 @@ var App = function(){
     handleInput(self);
   };
 };
+
+// make the App an event emitter
 App.prototype = Object.create(require('events').EventEmitter.prototype);
 module.exports = App;
