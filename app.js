@@ -1,7 +1,3 @@
-var rl = require("readline");
-var events = require('events');
-var stdin = process.stdin;
-var stdout = process.stdout;
 
 // Define the App object
 var App = function(){
@@ -41,6 +37,9 @@ function completer(line) {
 }
 
 function createPrompt(){
+  var stdin = process.stdin;
+  var stdout = process.stdout;
+  var rl = require("readline");
   var prompt = rl.createInterface(stdin,stdout,completer);
   prompt.setPrompt('>Enter event type (tab to list/autocomplete): ');
   return prompt;
